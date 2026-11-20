@@ -1,0 +1,10 @@
+pyproject.toml
+src/burgers/__init__.py
+src/burgers/data.py
+src/burgers/solver.py
+src/burgers.egg-info/PKG-INFO
+src/burgers.egg-info/SOURCES.txt
+src/burgers.egg-info/dependency_links.txt
+src/burgers.egg-info/requires.txt
+src/burgers.egg-info/top_level.txt
+tests/test_solver.py
