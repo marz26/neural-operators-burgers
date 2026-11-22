@@ -67,3 +67,65 @@
 - Con dati piccoli conviene tenere tutto il dataset sul device.
 - Un singolo run non dice nulla sulla variabilità: servono più seed.
 - Debug: overfittare pochi campioni è il primo test per un modello nuovo.
+
+## Blocco 1B: solver pseudo-spettrale per Burgers
+
+### Passo 1: derivata spettrale
+
+**Implementazione.** `spectral_derivative(u, L, order)`: FFT → moltiplicazione
+per (ik)^order → IFFT. Griglia periodica con `endpoint=False` (il punto
+x=L coincide con x=0).
+
+**Convergenza** su u = exp(sin x), derivata prima, errore massimo:
+
+| N  | spettrale | differenze finite |
+|----|-----------|-------------------|
+| 8  | 4.3e-03   | 3.4e-01           |
+| 16 | 1.8e-07   | 9.4e-02           |
+| 32 | 3.3e-15   | 2.6e-02           |
+| 64 | 1.1e-14   | 6.5e-03           |
+
+- Differenze finite: l'errore si divide per ~4 a ogni raddoppio di N
+  (ordine 2).
+- Spettrale: convergenza più che esponenziale, perché i coefficienti di
+  Fourier di exp(sin x) decadono come 1/k!. Già a N=32 si è a precisione
+  macchina.
+- Dopo la saturazione l'errore (~1e-14) non scende più: domina
+  l'arrotondamento in doppia precisione, amplificato dal fattore k.
+  Per soluzioni solo analitiche (non intere) la convergenza sarà più lenta.
+- Figura: `experiments/derivative_convergence.png`.
+
+**Modo di Nyquist.** Per N pari e ordine dispari il moltiplicatore del modo
+di Nyquist viene azzerato: per un segnale reale quel coefficiente è reale,
+e moltiplicato per ik darebbe un valore immaginario puro, impossibile per la
+derivata di una funzione reale. Sull'array reale restituito non cambia
+nulla (`.real` scarta comunque quella parte), quindi non è testabile sul
+risultato finale. Si controlla guardando `du.imag`: massimo 1.97e-15.
+
+### Test (6 in `tests/test_solver.py`)
+Import, derivata prima (N=64), costante, derivata seconda, derivata terza
+(sin x → -cos x), N dispari (63).
+
+### Mutation check: segno invertito (-1j*k)
+- Falliscono i test della derivata prima e della terza.
+- Restano verdi quello della derivata seconda (il segno si cancella:
+  (-ik)^2 = (ik)^2 = -k^2) e quello della costante (l'unico modo non nullo
+  è k=0).
+- L'errore osservato (2.92) vale 2·max|u'|, tipico di un segno invertito:
+  quando l'errore ha una forma semplice, il bug è di segno o di fattore,
+  non di precisione.
+
+### Bug e lezioni
+1. **`du[N//2]` non è il modo di Nyquist:** è il valore della derivata nel
+   punto di griglia N//2 (cos π = -1). Il test aspettava zero senza
+   motivo, e il solver aveva ragione.
+2. **Regola per i test rossi:** controllare in ordine il test, il dato
+   esatto, il codice. Non modificare il solver finché non si è esclusa
+   la colpa del test.
+3. **Un test verde va verificato rompendo il codice:** il mutation check
+   dimostra che i test proteggono davvero, e mostra quali controlli
+   mancano (il segno è coperto solo dagli ordini dispari).
+
+### Prossimo passo
+Aliasing: esperimento con cos(6x) su N=16 (dove finisce l'energia del
+modo 12?), poi regola dei 2/3 e termine non lineare.
