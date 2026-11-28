@@ -12,3 +12,16 @@ def spectral_derivative(u: np.ndarray, L: float, order: int = 1) -> np.ndarray:
     du = np.fft.ifft(mult * np.fft.fft(u))
     return du.real                      # du.imag deve essere ~1e-15
 
+def dealias_mask(N: int, L: float) -> np.ndarray:
+    k = wavenumbers(N, L)
+    mask = np.abs(k) <= (2.0 / 3.0) * (np.max(np.abs(k)))
+    return mask
+
+def nonlinear_hat(u_hat: np.ndarray, k: np.ndarray, mask: np.ndarray) -> np.ndarray:
+    u_hat_dealiased = u_hat * mask
+    u=np.fft.ifft(u_hat_dealiased)
+    u_real = u.real
+    u2 = u_real ** 2
+    u2_hat = np.fft.fft(u2)*(-0.5j*k)
+    u2_hat_dealiased = u2_hat * mask
+    return u2_hat_dealiased
