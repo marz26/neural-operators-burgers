@@ -129,3 +129,12 @@ Import, derivata prima (N=64), costante, derivata seconda, derivata terza
 ### Prossimo passo
 Aliasing: esperimento con cos(6x) su N=16 (dove finisce l'energia del
 modo 12?), poi regola dei 2/3 e termine non lineare.
+
+(.venv) (base) federicomarsico@MacBook-Pro-di-Federico neural-operators-burgers % python -u "/Users/federicomarsico/neural-operators-bur
+gers/experiments/aliasing.py"
+6.0 (0.5000000000000003-5.762201345430467e-16j)
+-6.0 (0.5000000000000003+5.762201345430467e-16j)
+0.0 (0.5000000000000007+0j)
+4.0 (0.25+8.326672684688674e-16j)
+-4.0 (0.25-8.326672684688674e-16j)
+0.0 (1+0j)
